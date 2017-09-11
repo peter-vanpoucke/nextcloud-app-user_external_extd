@@ -24,7 +24,7 @@ class OC_User_IMAP_extd extends \OCA\user_external_extd\Base {
 	 *
 	 * @param string $mailbox PHP imap_open mailbox definition, e.g.
 	 *                        {127.0.0.1:143/imap/readonly}
-	 * @param string $domain  If provided, loging will be restricted to this domain
+	 * @param string $filters  If provided, login will be restricted by checking these filters
 	 */
 	public function __construct($mailbox, $filters=null) {
 		parent::__construct($mailbox, $filters);
@@ -40,7 +40,11 @@ class OC_User_IMAP_extd extends \OCA\user_external_extd\Base {
 	 * @return true/false
 	 */
 	public function checkPassword($uid, $password) {
-		if (!$this->checkUsername($uid))
+		if ($this->checkUsername($uid))
+		{
+			$username = $uid;
+		}
+		else
 		{
 			OCP\Util::writeLog('user_external_extd', "ERROR: User '$uid' doesn't match filter(s).", OCP\Util::ERROR);
 			return false;
@@ -49,21 +53,6 @@ class OC_User_IMAP_extd extends \OCA\user_external_extd\Base {
 			OCP\Util::writeLog('user_external_extd', 'ERROR: PHP imap extension is not installed', OCP\Util::ERROR);
 			return false;
 		}
-
- 		// Check if we only want logins from ONE domain and strip the domain part from UID		
- 		if($this->domain != '') {
- 			$pieces = explode('@', $uid);
- 			if(count($pieces) == 1) {
- 				$username = $uid . "@" . $this->domain;
- 			}elseif((count($pieces) == 2) and ($pieces[1] == $this->domain)) {
- 				$username = $uid;
- 				$uid = $pieces[0];
- 			}else{
- 				return false;
- 			}
- 		}else{
- 			$username = $uid;
- 		}
  
  		$mbox = @imap_open($this->mailbox, $username, $password, OP_HALFOPEN, 1);
 		imap_errors();
