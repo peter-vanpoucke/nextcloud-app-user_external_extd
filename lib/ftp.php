@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2012 Robin Appelman <icewind@owncloud.com>
+ * Copyright (c) 2017 Peter Vanpoucke <peter.vanpoucke@subport.be> / Robin Appelman <icewind@owncloud.com>
  * This file is licensed under the Affero General Public License version 3 or
  * later.
  * See the COPYING-README file.
@@ -10,12 +10,13 @@
  * User authentication against a FTP/FTPS server
  *
  * @category Apps
- * @package  UserExternal
+ * @package  UserExternalExtd
+ * @author   Peter Vanpoucke <peter.vanpoucke@subport.be>
  * @author   Robin Appelman <icewind@owncloud.com>
  * @license  http://www.gnu.org/licenses/agpl AGPL
  * @link     http://github.com/owncloud/apps
  */
-class OC_User_FTP extends \OCA\user_external\Base{
+class OC_User_FTP_extd extends \OCA\user_external_extd\Base{
 	private $host;
 	private $secure;
 	private $protocol;
@@ -26,14 +27,14 @@ class OC_User_FTP extends \OCA\user_external\Base{
 	 * @param string  $host   Hostname or IP of FTP server
 	 * @param boolean $secure TRUE to enable SSL
 	 */
-	public function __construct($host,$secure=false) {
+	public function __construct($host,$secure=false, $filters=null) {
 		$this->host=$host;
 		$this->secure=$secure;
 		$this->protocol='ftp';
 		if($this->secure) {
 			$this->protocol.='s';
 		}
-		parent::__construct($this->protocol . '://' . $this->host);
+		parent::__construct($this->protocol . '://' . $this->host, $filters);
 	}
 
 	/**
@@ -45,9 +46,14 @@ class OC_User_FTP extends \OCA\user_external\Base{
 	 * @return true/false
 	 */
 	public function checkPassword($uid, $password) {
+		if (!$this->checkUsername($uid))
+		{
+			OCP\Util::writeLog('user_external_extd', "ERROR: User '$uid' doesn't match filter(s).", OCP\Util::ERROR);
+			return false;
+		}
 		if (false === array_search($this->protocol, stream_get_wrappers())) {
 			OCP\Util::writeLog(
-				'user_external',
+				'user_external_extd',
 				'ERROR: Stream wrapper not available: ' . $this->protocol, OCP\Util::ERROR
 			);
 			return false;

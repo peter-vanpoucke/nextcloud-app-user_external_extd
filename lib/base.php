@@ -1,11 +1,11 @@
 <?php
 /**
- * Copyright (c) 2014 Christian Weiske <cweiske@cweiske.de>
+ * Copyright (c) 2017 Peter Vanpoucke <peter.vanpoucke@subport.be> / Christian Weiske <cweiske@cweiske.de>
  * This file is licensed under the Affero General Public License version 3 or
  * later.
  * See the COPYING-README file.
  */
-namespace OCA\user_external;
+namespace OCA\user_external_extd;
 use \OC_DB;
 
 /**
@@ -16,20 +16,26 @@ use \OC_DB;
  *
  * @category Apps
  * @package  UserExternal
+ * @author   Peter Vanpoucke <peter.vanpoucke@subport.be>
  * @author   Christian Weiske <cweiske@cweiske.de>
  * @license  http://www.gnu.org/licenses/agpl AGPL
- * @link     http://github.com/owncloud/apps
+ * @link     https://github.com/peter-vanpoucke/nextcloud-app-user_external_extd
  */
 abstract class Base extends \OC\User\Backend{
 	protected $backend = '';
+	protected $filters;
 
 	/**
 	 * Create new instance, set backend name
 	 *
 	 * @param string $backend Identifier of the backend
 	 */
-	public function __construct($backend) {
+	public function __construct($backend, $filters) {
 		$this->backend = $backend;
+		if (isset($filters))
+		{
+			$this->filters = is_array($filters) ? $filters : array($filters);
+		}
 	}
 
 	/**
@@ -176,5 +182,30 @@ abstract class Base extends \OC\User\Backend{
 			array($uid, $this->backend)
 		);
 		return $result->fetchOne() > 0;
+	}
+	
+	/**
+	 * Check if a username matches (preg_match) the applied filters
+	 *
+	 * @param string $uid the username
+	 *
+	 * @return boolean
+	 */
+	public function checkUsername($uid)
+	{
+		if (!isset($this->filters) || count($this->filters) == 0)
+		{			
+			return isset($uid) && !empty($uid);
+		}
+		else
+		{
+			foreach($this->filters as $filter)
+			{
+				if (preg_match($filter, $uid))
+				{
+					return true;
+				}
+			}
+		}
 	}
 }
